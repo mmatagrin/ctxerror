@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"encoding/json"
 	"runtime"
-	)
+	"runtime/debug"
+)
 
 type CtxErrorManager struct {
 	context map[string]interface{}
@@ -12,6 +13,7 @@ type CtxErrorManager struct {
 
 type CtxErrorTrace struct {
 	Trace []CtxError `json:"trace"`
+	StackTrace string `json:"stack_trace"`
 }
 
 type CtxError struct {
@@ -54,7 +56,7 @@ func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTrace {
 		ctxError.ErrorI = err.Error()
 	}
 
-	return CtxErrorTrace{Trace:[]CtxError{ctxError}}
+	return CtxErrorTrace{Trace:[]CtxError{ctxError}, StackTrace: string(debug.Stack())}
 }
 
 func Wrap(err error, message string) CtxErrorTrace {
@@ -69,7 +71,7 @@ func Wrap(err error, message string) CtxErrorTrace {
 		ctxError.ErrorI = err.Error()
 	}
 
-	return CtxErrorTrace{Trace:[]CtxError{ctxError}}
+	return CtxErrorTrace{Trace:[]CtxError{ctxError}, StackTrace: string(debug.Stack())}
 }
 
 func getContextualizedError(message string, context map[string]interface{}) CtxError{
