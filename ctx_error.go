@@ -6,7 +6,7 @@ import (
 	"runtime"
 	)
 
-type ContextualizedErrorManager struct {
+type CtxErrorManager struct {
 	context map[string]interface{}
 }
 
@@ -16,8 +16,7 @@ type ContextualizedError struct {
 	Line int `json:"line"`
 	FunctionName string `json:"function_name"`
 	Data map[string]interface{} `json:"data"`
-	Previous *ContextualizedError `json:"previous"`
-	ErrorMsg string `json:"error"`
+	ErrorI error `json:"error"`
 }
 
 
@@ -30,11 +29,12 @@ func (contextualizedError ContextualizedError) Error() string{
 	return string(contextualizedErrorBytes)
 }
 
-func (cem ContextualizedErrorManager) NewContextualizedError(err interface{}, message string) ContextualizedError{
+func (cem CtxErrorManager) Wrap(err error, message string) ContextualizedError{
 
 	contextualizedError := ContextualizedError{
 		Data: cem.context,
 		Message: message,
+		ErrorI: err,
 	}
 
 	functionName , fileName, line, ok := runtime.Caller(1)
@@ -43,14 +43,6 @@ func (cem ContextualizedErrorManager) NewContextualizedError(err interface{}, me
 		contextualizedError.FunctionName = runtime.FuncForPC(functionName).Name()
 		contextualizedError.FileName = fileName
 		contextualizedError.Line = line
-	}
-
-	if previous, ok := err.(ContextualizedError); ok{
-		contextualizedError.Previous = &previous
-	} else if previous, ok := err.(*ContextualizedError); ok{
-		contextualizedError.Previous = previous
-	} else {
-		contextualizedError.ErrorMsg = fmt.Sprintf("%v", err)
 	}
 
 	return contextualizedError
@@ -62,10 +54,10 @@ func (contextualizedError ContextualizedError) GetMessage() string{
 }
 
 
-func SetErrorContext(m map[string]interface{}) ContextualizedErrorManager{
-	return ContextualizedErrorManager{context: m}
+func SetContext(m map[string]interface{}) CtxErrorManager {
+	return CtxErrorManager{context: m}
 }
 
-func (cem ContextualizedErrorManager)GetContext() map[string]interface{}{
+func (cem CtxErrorManager)GetContext() map[string]interface{}{
 	return cem.context
 }
