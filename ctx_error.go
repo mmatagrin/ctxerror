@@ -1,4 +1,4 @@
-package contextualized_error
+package ctxerror
 
 import (
 	"fmt"
