@@ -10,46 +10,87 @@ type CtxErrorManager struct {
 	context map[string]interface{}
 }
 
-type ContextualizedError struct {
+type CtxErrorTrace struct {
+	Trace []CtxError `json:"trace"`
+}
+
+type CtxError struct {
 	Message string `json:"message"`
 	FileName string `json:"file_name"`
 	Line int `json:"line"`
 	FunctionName string `json:"function_name"`
-	Data map[string]interface{} `json:"data"`
-	ErrorI error `json:"error"`
+	Context map[string]interface{} `json:"data"`
+	ErrorI string `json:"error"`
 }
 
-
-func (contextualizedError ContextualizedError) Error() string{
-	contextualizedErrorBytes, err := json.MarshalIndent(contextualizedError , "", "   ")
+func (cet CtxErrorTrace) Error() string{
+	ctxErrorTraceBytes, err := json.MarshalIndent(cet , "", "   ")
 	if err != nil{
-		return fmt.Sprintf("%v", contextualizedError)
+		return fmt.Sprintf("%v", ctxErrorTraceBytes)
+	}
+
+	return string(ctxErrorTraceBytes)
+}
+
+func (ctxError CtxError) Error() string{
+	contextualizedErrorBytes, err := json.MarshalIndent(ctxError , "", "   ")
+	if err != nil{
+		return fmt.Sprintf("%v", ctxError)
 	}
 
 	return string(contextualizedErrorBytes)
 }
 
-func (cem CtxErrorManager) Wrap(err error, message string) ContextualizedError{
+func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTrace {
 
-	contextualizedError := ContextualizedError{
-		Data: cem.context,
-		Message: message,
-		ErrorI: err,
+	ctxError := getContextualizedError(message, cem.context)
+
+	if errTrace, ok := err.(CtxErrorTrace); ok {
+		errTrace.Trace = append([]CtxError{ctxError}, errTrace.Trace...)
+		return errTrace
 	}
 
-	functionName , fileName, line, ok := runtime.Caller(1)
+	if _, ok := err.(CtxError); !ok{
+		ctxError.ErrorI = err.Error()
+	}
+
+	return CtxErrorTrace{Trace:[]CtxError{ctxError}}
+}
+
+func Wrap(err error, message string) CtxErrorTrace {
+	ctxError := getContextualizedError(message, nil)
+
+	if errTrace, ok := err.(CtxErrorTrace); ok {
+		errTrace.Trace = append([]CtxError{ctxError}, errTrace.Trace...)
+		return errTrace
+	}
+
+	if _, ok := err.(CtxError); !ok{
+		ctxError.ErrorI = err.Error()
+	}
+
+	return CtxErrorTrace{Trace:[]CtxError{ctxError}}
+}
+
+func getContextualizedError(message string, context map[string]interface{}) CtxError{
+	ctxError := CtxError{
+		Message: message,
+		Context: context,
+	}
+
+	functionName , fileName, line, ok := runtime.Caller(2)
 	//If we can retrieve the runtime informations, we add them to the error
 	if ok{
-		contextualizedError.FunctionName = runtime.FuncForPC(functionName).Name()
-		contextualizedError.FileName = fileName
-		contextualizedError.Line = line
+		ctxError.FunctionName = runtime.FuncForPC(functionName).Name()
+		ctxError.FileName = fileName
+		ctxError.Line = line
 	}
 
-	return contextualizedError
+	return ctxError
 }
 
 
-func (contextualizedError ContextualizedError) GetMessage() string{
+func (contextualizedError CtxError) GetMessage() string{
 	return contextualizedError.Message
 }
 
