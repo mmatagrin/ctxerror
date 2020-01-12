@@ -34,6 +34,14 @@ func (cet CtxErrorTrace) Error() string{
 	return string(ctxErrorTraceBytes)
 }
 
+func (cem CtxErrorManager) AddContext(key string, val interface{}) {
+	if cem.context == nil{
+		cem.context = make(map[string]interface{})
+	}
+
+	cem.context[key] = val
+}
+
 func (ctxError CtxError) Error() string{
 	contextualizedErrorBytes, err := json.MarshalIndent(ctxError , "", "   ")
 	if err != nil{
