@@ -21,7 +21,7 @@ type CtxError struct {
 	FileName string `json:"file_name"`
 	Line int `json:"line"`
 	FunctionName string `json:"function_name"`
-	Context map[string]interface{} `json:"data"`
+	Context map[string]interface{} `json:"context"`
 	ErrorI string `json:"error"`
 }
 
