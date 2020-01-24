@@ -40,9 +40,6 @@ func (cet CtxErrorTrace) Error() string{
 func (cet CtxErrorTrace) ErrorJson() string{
 	ctxErrorTraceBytes, err := json.MarshalIndent(cet , "", "   ")
 	if err != nil{
-		if len(cet.Trace) > 0{
-			return fmt.Sprintf("%s\n%v", cet.Trace[0].Message, ctxErrorTraceBytes)
-		}
 		return fmt.Sprintf("%v", ctxErrorTraceBytes)
 	}
 
@@ -82,7 +79,7 @@ func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTrace {
 	return CtxErrorTrace{Trace:[]CtxError{ctxError}, StackTrace: string(debug.Stack())}
 }
 
-func (cem CtxErrorManager)(message string) CtxErrorTrace{
+func (cem CtxErrorManager)New(message string) CtxErrorTrace{
 	ctxError := getContextualizedError(message, cem.context)
 
 	return CtxErrorTrace{Trace:[]CtxError{ctxError}, StackTrace: string(debug.Stack())}
