@@ -7,6 +7,8 @@ import (
 	"runtime/debug"
 )
 
+
+
 type CtxErrorManager struct {
 	context map[string]interface{}
 }
@@ -14,8 +16,8 @@ type CtxErrorManager struct {
 type CtxErrorTraceI interface {
 	Error() string
 	ErrorJson() string
+	GetMessage() string
 }
-
 
 type CtxErrorTrace struct {
 	Trace      []CtxError `json:"trace"`
@@ -29,6 +31,14 @@ type CtxError struct {
 	FunctionName string                 `json:"function_name"`
 	Context      map[string]interface{} `json:"context"`
 	ErrorI       string                 `json:"error"`
+}
+
+func (cet CtxErrorTrace)git GetMessage() string {
+	if cet.Trace != nil && len(cet.Trace) > 0{
+		return cet.Trace[0].GetMessage()
+	}
+
+	return ""
 }
 
 func (cet CtxErrorTrace) Error() string {
