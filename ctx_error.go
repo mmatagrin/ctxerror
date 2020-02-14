@@ -33,7 +33,7 @@ type CtxError struct {
 	ErrorI       string                 `json:"error"`
 }
 
-func (cet CtxErrorTrace)git GetMessage() string {
+func (cet CtxErrorTrace)GetMessage() string {
 	if cet.Trace != nil && len(cet.Trace) > 0{
 		return cet.Trace[0].GetMessage()
 	}
