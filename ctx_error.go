@@ -18,6 +18,7 @@ type CtxErrorTraceI interface {
 	ErrorJson() string
 	GetMessage() string
 	GetTrace() []CtxError
+	AddError(error, string)
 }
 
 type CtxErrorTrace struct {
@@ -70,6 +71,15 @@ func  (cet CtxErrorTrace) GetTrace() []CtxError{
 	}
 
 	return cet.Trace
+}
+
+func (cet CtxErrorTrace) AddError(err error, message string) {
+	if cet.Trace != nil {
+		cet.Trace = append(cet.Trace, getContextualizedError(message, nil))
+		return
+	}
+
+	cet.Trace = []CtxError{getContextualizedError(message, nil)}
 }
 
 func (cem CtxErrorManager) AddContext(key string, val interface{}) {
