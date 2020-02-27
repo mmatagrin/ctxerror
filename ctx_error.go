@@ -17,6 +17,7 @@ type CtxErrorTraceI interface {
 	Error() string
 	ErrorJson() string
 	GetMessage() string
+	GetTrace() []CtxError
 }
 
 type CtxErrorTrace struct {
@@ -30,7 +31,8 @@ type CtxError struct {
 	Line         int                    `json:"line"`
 	FunctionName string                 `json:"function_name"`
 	Context      map[string]interface{} `json:"context"`
-	ErrorI       string                 `json:"error"`
+	ErrorS       string                 `json:"error"`
+	ErrorI   	 error
 }
 
 func (cet CtxErrorTrace)GetMessage() string {
@@ -60,6 +62,14 @@ func (cet CtxErrorTrace) ErrorJson() string {
 	}
 
 	return string(ctxErrorTraceBytes)
+}
+
+func  (cet CtxErrorTrace) GetTrace() []CtxError{
+	if cet.Trace == nil {
+		return []CtxError{}
+	}
+
+	return cet.Trace
 }
 
 func (cem CtxErrorManager) AddContext(key string, val interface{}) {
@@ -92,7 +102,8 @@ func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTraceI {
 	}
 
 	if _, ok := err.(CtxError); !ok {
-		ctxError.ErrorI = err.Error()
+		ctxError.ErrorS = err.Error()
+		ctxError.ErrorI = err
 	}
 
 	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
@@ -118,7 +129,8 @@ func Wrap(err error, message string) CtxErrorTraceI {
 	}
 
 	if _, ok := err.(CtxError); !ok {
-		ctxError.ErrorI = err.Error()
+		ctxError.ErrorS = err.Error()
+		ctxError.ErrorI = err
 	}
 
 	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
