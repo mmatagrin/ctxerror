@@ -74,12 +74,23 @@ func  (cet CtxErrorTrace) GetTrace() []CtxError{
 }
 
 func (cet CtxErrorTrace) AddError(err error, message string) {
-	if cet.Trace != nil {
-		cet.Trace = append(cet.Trace, getContextualizedError(message, nil))
+	if err == nil{
 		return
 	}
 
-	cet.Trace = []CtxError{getContextualizedError(message, nil)}
+	ctxError := getContextualizedError(message, nil)
+
+	if errTrace, ok := err.(CtxErrorTrace); ok {
+		errTrace.Trace = append([]CtxError{ctxError}, errTrace.Trace...)
+		return
+	}
+
+	if _, ok := err.(CtxError); !ok {
+		ctxError.ErrorS = err.Error()
+		ctxError.ErrorI = err
+	}
+
+	return
 }
 
 func (cem CtxErrorManager) AddContext(key string, val interface{}) {
