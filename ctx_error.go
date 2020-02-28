@@ -78,17 +78,15 @@ func (cet CtxErrorTrace) AddError(err error, message string) {
 		return
 	}
 
-	ctxError := getContextualizedError(message, nil)
-
-	if errTrace, ok := err.(CtxErrorTrace); ok {
-		errTrace.Trace = append([]CtxError{ctxError}, errTrace.Trace...)
+	if errTrace, ok := err.(CtxErrorTraceI); ok {
+		cet.Trace = append(errTrace.GetTrace(), cet.Trace...)
 		return
 	}
 
-	if _, ok := err.(CtxError); !ok {
-		ctxError.ErrorS = err.Error()
-		ctxError.ErrorI = err
-	}
+	ctxError := getContextualizedError(message, nil)
+	ctxError.ErrorS = err.Error()
+	ctxError.ErrorI = err
+	cet.Trace = append([]CtxError{ctxError}, cet.Trace...)
 
 	return
 }
