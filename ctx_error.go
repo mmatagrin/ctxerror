@@ -155,6 +155,13 @@ func Wrap(err error, message string) CtxErrorTraceI {
 	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
 }
 
+
+func New(message string) CtxErrorTraceI {
+
+	ctxError := getContextualizedError(message, nil)
+	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
+}
+
 func getContextualizedError(message string, context map[string]interface{}) CtxError {
 	ctxError := CtxError{
 		Message: message,
