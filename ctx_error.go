@@ -36,7 +36,7 @@ type CtxError struct {
 	ErrorI   	 error
 }
 
-func (cet CtxErrorTrace)GetMessage() string {
+func (cet CtxErrorTrace) GetMessage() string {
 	if cet.Trace != nil && len(cet.Trace) > 0{
 		return cet.Trace[0].GetMessage()
 	}
@@ -47,13 +47,15 @@ func (cet CtxErrorTrace)GetMessage() string {
 func (cet CtxErrorTrace) Error() string {
 	ctxErrorTraceBytes, err := json.MarshalIndent(cet, "", "   ")
 	if err != nil {
-		if len(cet.Trace) > 0 {
-			return fmt.Sprintf("%s\n%v", cet.Trace[0].Message, ctxErrorTraceBytes)
-		}
-		return fmt.Sprintf("%v", ctxErrorTraceBytes)
+		return string(ctxErrorTraceBytes)
 	}
 
-	return string(ctxErrorTraceBytes)
+	if len(cet.Trace) > 0 {
+		return fmt.Sprintf("%s\n%v", cet.Trace[0].Message, string(ctxErrorTraceBytes))
+	}
+
+	return fmt.Sprintf("%v", string(ctxErrorTraceBytes))
+
 }
 
 func (cet CtxErrorTrace) ErrorJson() string {
@@ -130,7 +132,6 @@ func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTraceI {
 
 func (cem CtxErrorManager) New(message string) CtxErrorTraceI {
 	ctxError := getContextualizedError(message, cem.context)
-
 	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
 }
 
@@ -157,7 +158,6 @@ func Wrap(err error, message string) CtxErrorTraceI {
 
 
 func New(message string) CtxErrorTraceI {
-
 	ctxError := getContextualizedError(message, nil)
 	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
 }
