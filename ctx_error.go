@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 )
 
-
+var HiddenFields = []string{}
 
 type CtxErrorManager struct {
 	context map[string]interface{}
@@ -98,6 +98,13 @@ func (cem CtxErrorManager) AddContext(key string, val interface{}) {
 		cem.context = make(map[string]interface{})
 	}
 
+	for _, hiddenField := range HiddenFields {
+		if key == hiddenField {
+			cem.context[key] = "hidden"
+			return
+		}
+	}
+
 	cem.context[key] = val
 }
 
@@ -184,9 +191,26 @@ func (contextualizedError CtxError) GetMessage() string {
 }
 
 func SetContext(m map[string]interface{}) CtxErrorManager {
+	if m == nil {
+		return CtxErrorManager{context: m}
+	}
+
+	for key := range m {
+		for _, hiddenField := range HiddenFields {
+			if key == hiddenField {
+				m[key] = "hidden"
+				break
+			}
+		}
+	}
+
 	return CtxErrorManager{context: m}
 }
 
 func (cem CtxErrorManager) GetContext() map[string]interface{} {
 	return cem.context
+}
+
+func SetHiddenFields(fields ...string)  {
+	HiddenFields = append(HiddenFields, fields...)
 }
