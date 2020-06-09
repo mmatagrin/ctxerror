@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
-	"runtime/debug"
 )
 
 var HiddenFields = []string{}
@@ -23,7 +22,7 @@ type CtxErrorTraceI interface {
 
 type CtxErrorTrace struct {
 	Trace      []CtxError `json:"trace"`
-	StackTrace string     `json:"stack_trace"`
+	//StackTrace string     `json:"stack_trace"`
 }
 
 type CtxError struct {
@@ -134,12 +133,12 @@ func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTraceI {
 		ctxError.ErrorI = err
 	}
 
-	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
+	return CtxErrorTrace{Trace: []CtxError{ctxError}/*, StackTrace: string(debug.Stack())*/}
 }
 
 func (cem CtxErrorManager) New(message string) CtxErrorTraceI {
 	ctxError := getContextualizedError(message, cem.context)
-	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
+	return CtxErrorTrace{Trace: []CtxError{ctxError}/*, StackTrace: string(debug.Stack())*/}
 }
 
 func Wrap(err error, message string) CtxErrorTraceI {
@@ -160,13 +159,13 @@ func Wrap(err error, message string) CtxErrorTraceI {
 		ctxError.ErrorI = err
 	}
 
-	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
+	return CtxErrorTrace{Trace: []CtxError{ctxError}/*, StackTrace: string(debug.Stack())*/}
 }
 
 
 func New(message string) CtxErrorTraceI {
 	ctxError := getContextualizedError(message, nil)
-	return CtxErrorTrace{Trace: []CtxError{ctxError}, StackTrace: string(debug.Stack())}
+	return CtxErrorTrace{Trace: []CtxError{ctxError}/*, StackTrace: string(debug.Stack())*/}
 }
 
 func getContextualizedError(message string, context map[string]interface{}) CtxError {
