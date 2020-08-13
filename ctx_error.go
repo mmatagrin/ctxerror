@@ -6,7 +6,10 @@ import (
 	"runtime"
 )
 
-var HiddenFields = []string{}
+//By default `password` is hidden
+var HiddenFields = []string{
+	"password",
+}
 
 type CtxErrorManager struct {
 	context map[string]interface{}
@@ -211,5 +214,9 @@ func (cem CtxErrorManager) GetContext() map[string]interface{} {
 }
 
 func SetHiddenFields(fields ...string)  {
+	HiddenFields = fields
+}
+
+func AddHiddenFields(fields ...string) {
 	HiddenFields = append(HiddenFields, fields...)
 }
