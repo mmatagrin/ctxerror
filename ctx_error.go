@@ -3,6 +3,7 @@ package ctxerror
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"runtime"
 )
 
@@ -192,16 +193,41 @@ func (contextualizedError CtxError) GetMessage() string {
 	return contextualizedError.Message
 }
 
-func SetContext(m map[string]interface{}) CtxErrorManager {
+func SetContext(m map[string]interface{}) (c CtxErrorManager) {
+	//since we use reflection, and we never want this function to crash, we recover any error that may happen
+	defer func() {
+		err := recover()
+		if err != nil {
+			c = CtxErrorManager{context: nil}
+		}
+	}()
+
 	if m == nil {
 		return CtxErrorManager{context: m}
 	}
 
-	for key := range m {
+	for key, val := range m {
 		for _, hiddenField := range HiddenFields {
 			if key == hiddenField {
 				m[key] = "hidden"
 				break
+			}
+		}
+
+		if reflect.TypeOf(val).Kind() == reflect.Map {
+			t := reflect.TypeOf(val)
+
+			if t.Key().Kind() != reflect.String {
+				continue
+			}
+
+			valueOf := reflect.ValueOf(val)
+			for _, hiddenField := range HiddenFields {
+				for _, entry := range valueOf.MapKeys(){
+					if entry.String() == hiddenField {
+						valueOf.SetMapIndex(reflect.ValueOf(hiddenField), reflect.Zero(t.Elem()))
+					}
+				}
 			}
 		}
 	}
