@@ -13,7 +13,7 @@ var HiddenFields = []string{
 	"email",
 	"username",
 	"mail",
-	"fisrt-name",
+	"first-name",
 	"last-name",
 	"first_name",
 	"last_name",
