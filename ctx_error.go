@@ -10,6 +10,14 @@ import (
 //By default `password` is hidden
 var HiddenFields = []string{
 	"password",
+	"email",
+	"username",
+	"mail",
+	"fisrt-name",
+	"last-name",
+	"first_name",
+	"last_name",
+	"name",
 }
 
 type CtxErrorManager struct {
