@@ -109,11 +109,8 @@ func (cem CtxErrorManager) AddContext(key string, val interface{}) {
 		cem.context = make(map[string]interface{})
 	}
 
-	for _, hiddenField := range HiddenFields {
-		if key == hiddenField {
-			cem.context[key] = "hidden"
-			return
-		}
+	if valMap, ok := val.(map[string]interface{}); ok {
+		val = sanitizeContext(valMap)
 	}
 
 	cem.context[key] = val
@@ -201,23 +198,25 @@ func (contextualizedError CtxError) GetMessage() string {
 	return contextualizedError.Message
 }
 
-func SetContext(m map[string]interface{}) (c CtxErrorManager) {
-	//since we use reflection, and we never want this function to crash, we recover any error that may happen
+func sanitizeContext(m map[string] interface{}) (o map[string]interface{}) {
 	defer func() {
 		err := recover()
 		if err != nil {
-			c = CtxErrorManager{context: nil}
+			o = nil
 		}
 	}()
 
 	if m == nil {
-		return CtxErrorManager{context: m}
+		return nil
 	}
 
+	localCtx := map[string]interface{}{}
+
 	for key, val := range m {
+		localCtx[key] = val
 		for _, hiddenField := range HiddenFields {
 			if key == hiddenField {
-				m[key] = "hidden"
+				localCtx[key] = "hidden"
 				break
 			}
 		}
@@ -230,17 +229,26 @@ func SetContext(m map[string]interface{}) (c CtxErrorManager) {
 			}
 
 			valueOf := reflect.ValueOf(val)
-			for _, hiddenField := range HiddenFields {
-				for _, entry := range valueOf.MapKeys(){
+			tmpMap := map[string]interface{}{}
+
+			for _, entry := range valueOf.MapKeys() {
+				tmpMap[entry.String()] = valueOf.MapIndex(entry).Interface()
+				for _, hiddenField := range HiddenFields {
 					if entry.String() == hiddenField {
-						valueOf.SetMapIndex(reflect.ValueOf(hiddenField), reflect.Zero(t.Elem()))
+						tmpMap[entry.String()] = "hidden"
+						break
 					}
 				}
 			}
+			localCtx[key] = tmpMap
 		}
 	}
 
-	return CtxErrorManager{context: m}
+	return localCtx
+}
+
+func SetContext(m map[string]interface{}) (c CtxErrorManager) {
+	return CtxErrorManager{context: sanitizeContext(m)}
 }
 
 func (cem CtxErrorManager) GetContext() map[string]interface{} {
