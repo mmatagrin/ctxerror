@@ -111,6 +111,13 @@ func (cem CtxErrorManager) AddContext(key string, val interface{}) {
 
 	if valMap, ok := val.(map[string]interface{}); ok {
 		val = sanitizeContext(valMap)
+	} else {
+		for _, hiddenField := range HiddenFields {
+			if key == hiddenField {
+				val = "hidden"
+				break
+			}
+		}
 	}
 
 	cem.context[key] = val
