@@ -56,7 +56,7 @@ func (cet CtxErrorTrace) GetMessage() string {
 }
 
 func (cet CtxErrorTrace) Error() string {
-	ctxErrorTraceBytes, err := json.MarshalIndent(cet, "", "   ")
+	ctxErrorTraceBytes, err := json.Marshal(cet)
 	if err != nil {
 		return string(ctxErrorTraceBytes)
 	}
@@ -70,7 +70,7 @@ func (cet CtxErrorTrace) Error() string {
 }
 
 func (cet CtxErrorTrace) ErrorJson() string {
-	ctxErrorTraceBytes, err := json.MarshalIndent(cet, "", "   ")
+	ctxErrorTraceBytes, err := json.Marshal(cet)
 	if err != nil {
 		return fmt.Sprintf("%v", ctxErrorTraceBytes)
 	}
