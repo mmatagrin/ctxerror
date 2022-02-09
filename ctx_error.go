@@ -124,7 +124,7 @@ func (cem CtxErrorManager) AddContext(key string, val interface{}) {
 }
 
 func (ctxError CtxError) Error() string {
-	contextualizedErrorBytes, err := json.MarshalIndent(ctxError, "", "   ")
+	contextualizedErrorBytes, err := json.Marshal(ctxError)
 	if err != nil {
 		return fmt.Sprintf("%v", ctxError)
 	}
