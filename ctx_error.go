@@ -30,10 +30,12 @@ type CtxErrorTraceI interface {
 	GetMessage() string
 	GetTrace() []CtxError
 	AddError(error, string) CtxErrorTraceI
+	ErrorKind() string
 }
 
 type CtxErrorTrace struct {
-	Trace      []CtxError `json:"trace"`
+	Trace []CtxError `json:"trace"`
+	kind  *string
 	//StackTrace string     `json:"stack_trace"`
 }
 
@@ -44,11 +46,18 @@ type CtxError struct {
 	FunctionName string                 `json:"function_name"`
 	Context      map[string]interface{} `json:"context"`
 	ErrorS       string                 `json:"error"`
-	ErrorI   	 error
+	ErrorI       error
+}
+
+func (cet CtxErrorTrace) ErrorKind() string {
+	if cet.kind != nil {
+		return *cet.kind
+	}
+	return ""
 }
 
 func (cet CtxErrorTrace) GetMessage() string {
-	if cet.Trace != nil && len(cet.Trace) > 0{
+	if cet.Trace != nil && len(cet.Trace) > 0 {
 		return cet.Trace[0].GetMessage()
 	}
 
@@ -78,7 +87,7 @@ func (cet CtxErrorTrace) ErrorJson() string {
 	return string(ctxErrorTraceBytes)
 }
 
-func  (cet CtxErrorTrace) GetTrace() []CtxError{
+func (cet CtxErrorTrace) GetTrace() []CtxError {
 	if cet.Trace == nil {
 		return []CtxError{}
 	}
@@ -87,7 +96,7 @@ func  (cet CtxErrorTrace) GetTrace() []CtxError{
 }
 
 func (cet CtxErrorTrace) AddError(err error, message string) CtxErrorTraceI {
-	if err == nil{
+	if err == nil {
 		return cet
 	}
 
@@ -133,7 +142,7 @@ func (ctxError CtxError) Error() string {
 }
 
 func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTraceI {
-	if err == nil{
+	if err == nil {
 		return nil
 	}
 
@@ -149,17 +158,42 @@ func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTraceI {
 		ctxError.ErrorI = err
 	}
 
-	return CtxErrorTrace{Trace: []CtxError{ctxError}/*, StackTrace: string(debug.Stack())*/}
+	return CtxErrorTrace{Trace: []CtxError{ctxError} /*, StackTrace: string(debug.Stack())*/}
+}
+
+func (cem CtxErrorManager) WrapWithKind(kind string, err error, message string) CtxErrorTraceI {
+	if err == nil {
+		return nil
+	}
+
+	ctxError := getContextualizedError(message, cem.context)
+
+	if errTrace, ok := err.(CtxErrorTrace); ok {
+		errTrace.Trace = append([]CtxError{ctxError}, errTrace.Trace...)
+		errTrace.kind = &kind
+		return errTrace
+	}
+
+	if _, ok := err.(CtxError); !ok {
+		ctxError.ErrorS = err.Error()
+		ctxError.ErrorI = err
+	}
+
+	return CtxErrorTrace{Trace: []CtxError{ctxError}, kind: &kind /*, StackTrace: string(debug.Stack())*/}
 }
 
 func (cem CtxErrorManager) New(message string) CtxErrorTraceI {
 	ctxError := getContextualizedError(message, cem.context)
-	return CtxErrorTrace{Trace: []CtxError{ctxError}/*, StackTrace: string(debug.Stack())*/}
+	return CtxErrorTrace{Trace: []CtxError{ctxError} /*, StackTrace: string(debug.Stack())*/}
+}
+
+func (cem CtxErrorManager) NewWithKind(message string, kind string) CtxErrorTraceI {
+	ctxError := getContextualizedError(message, cem.context)
+	return CtxErrorTrace{Trace: []CtxError{ctxError}, kind: &kind /*, StackTrace: string(debug.Stack())*/}
 }
 
 func Wrap(err error, message string) CtxErrorTraceI {
-
-	if err == nil{
+	if err == nil {
 		return nil
 	}
 
@@ -175,13 +209,38 @@ func Wrap(err error, message string) CtxErrorTraceI {
 		ctxError.ErrorI = err
 	}
 
-	return CtxErrorTrace{Trace: []CtxError{ctxError}/*, StackTrace: string(debug.Stack())*/}
+	return CtxErrorTrace{Trace: []CtxError{ctxError} /*, StackTrace: string(debug.Stack())*/}
 }
 
+func WrapWithKind(kind string, err error, message string) CtxErrorTraceI {
+	if err == nil {
+		return nil
+	}
+
+	ctxError := getContextualizedError(message, nil)
+
+	if errTrace, ok := err.(CtxErrorTrace); ok {
+		errTrace.Trace = append([]CtxError{ctxError}, errTrace.Trace...)
+		errTrace.kind = &kind
+		return errTrace
+	}
+
+	if _, ok := err.(CtxError); !ok {
+		ctxError.ErrorS = err.Error()
+		ctxError.ErrorI = err
+	}
+
+	return CtxErrorTrace{Trace: []CtxError{ctxError}, kind: &kind /*, StackTrace: string(debug.Stack())*/}
+}
 
 func New(message string) CtxErrorTraceI {
 	ctxError := getContextualizedError(message, nil)
-	return CtxErrorTrace{Trace: []CtxError{ctxError}/*, StackTrace: string(debug.Stack())*/}
+	return CtxErrorTrace{Trace: []CtxError{ctxError} /*, StackTrace: string(debug.Stack())*/}
+}
+
+func NewWithKind(message string, kind string) CtxErrorTraceI {
+	ctxError := getContextualizedError(message, nil)
+	return CtxErrorTrace{Trace: []CtxError{ctxError}, kind: &kind /*, StackTrace: string(debug.Stack())*/}
 }
 
 func getContextualizedError(message string, context map[string]interface{}) CtxError {
@@ -205,7 +264,7 @@ func (contextualizedError CtxError) GetMessage() string {
 	return contextualizedError.Message
 }
 
-func sanitizeContext(m map[string] interface{}) (o map[string]interface{}) {
+func sanitizeContext(m map[string]interface{}) (o map[string]interface{}) {
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -262,7 +321,7 @@ func (cem CtxErrorManager) GetContext() map[string]interface{} {
 	return cem.context
 }
 
-func SetHiddenFields(fields ...string)  {
+func SetHiddenFields(fields ...string) {
 	HiddenFields = fields
 }
 
