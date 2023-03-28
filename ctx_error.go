@@ -67,7 +67,7 @@ func (cet CtxErrorTrace) GetMessage() string {
 func (cet CtxErrorTrace) Error() string {
 	ctxErrorTraceBytes, err := json.Marshal(cet)
 	if err != nil {
-		return string(ctxErrorTraceBytes)
+		return fmt.Sprintf("%v", cet)
 	}
 
 	if len(cet.Trace) > 0 {
