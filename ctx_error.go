@@ -7,7 +7,7 @@ import (
 	"runtime"
 )
 
-//By default `password` is hidden
+// By default `password` is hidden
 var HiddenFields = []string{
 	"password",
 	"email",
@@ -67,7 +67,7 @@ func (cet CtxErrorTrace) GetMessage() string {
 func (cet CtxErrorTrace) Error() string {
 	ctxErrorTraceBytes, err := json.Marshal(cet)
 	if err != nil {
-		return fmt.Sprintf("%v", cet)
+		return "an unmarshallable error occurred"
 	}
 
 	if len(cet.Trace) > 0 {
