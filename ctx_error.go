@@ -141,6 +141,17 @@ func (ctxError CtxError) Error() string {
 	return string(contextualizedErrorBytes)
 }
 
+func (ctxError CtxError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any{
+		"message":       ctxError.Message,
+		"file_name":     ctxError.FileName,
+		"line":          ctxError.Line,
+		"function_name": ctxError.FunctionName,
+		"context":       ctxError.Context,
+		"error":         ctxError.ErrorI.Error(),
+	})
+}
+
 func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTraceI {
 	if err == nil {
 		return nil
