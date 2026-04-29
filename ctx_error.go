@@ -57,7 +57,7 @@ func (cet CtxErrorTrace) ErrorKind() string {
 }
 
 func (cet CtxErrorTrace) GetMessage() string {
-	if cet.Trace != nil && len(cet.Trace) > 0 {
+	if len(cet.Trace) > 0 {
 		return cet.Trace[0].GetMessage()
 	}
 
@@ -106,7 +106,7 @@ func (cet CtxErrorTrace) AddError(err error, message string) CtxErrorTraceI {
 	}
 
 	ctxError := getContextualizedError(message, nil)
-	ctxError.ErrorS = err.Error()
+	ctxError.ErrorS = safeErrorString(err, "")
 	ctxError.ErrorI = err
 	cet.Trace = append([]CtxError{ctxError}, cet.Trace...)
 
@@ -135,16 +135,19 @@ func (cem CtxErrorManager) AddContext(key string, val interface{}) {
 func (ctxError CtxError) Error() string {
 	contextualizedErrorBytes, err := json.Marshal(ctxError)
 	if err != nil {
-		return fmt.Sprintf("%v", ctxError)
+		if ctxError.Message != "" {
+			return ctxError.Message
+		}
+		return "an unmarshallable error occurred"
 	}
 
 	return string(contextualizedErrorBytes)
 }
 
 func (ctxError CtxError) MarshalJSON() ([]byte, error) {
-	err := ""
+	err := ctxError.ErrorS
 	if ctxError.ErrorI != nil {
-		err = ctxError.ErrorI.Error()
+		err = safeErrorString(ctxError.ErrorI, ctxError.ErrorS)
 	}
 	return json.Marshal(map[string]any{
 		"message":       ctxError.Message,
@@ -169,7 +172,7 @@ func (cem CtxErrorManager) Wrap(err error, message string) CtxErrorTraceI {
 	}
 
 	if _, ok := err.(CtxError); !ok {
-		ctxError.ErrorS = err.Error()
+		ctxError.ErrorS = safeErrorString(err, "")
 		ctxError.ErrorI = err
 	}
 
@@ -190,7 +193,7 @@ func (cem CtxErrorManager) WrapWithKind(kind string, err error, message string) 
 	}
 
 	if _, ok := err.(CtxError); !ok {
-		ctxError.ErrorS = err.Error()
+		ctxError.ErrorS = safeErrorString(err, "")
 		ctxError.ErrorI = err
 	}
 
@@ -220,7 +223,7 @@ func Wrap(err error, message string) CtxErrorTraceI {
 	}
 
 	if _, ok := err.(CtxError); !ok {
-		ctxError.ErrorS = err.Error()
+		ctxError.ErrorS = safeErrorString(err, "")
 		ctxError.ErrorI = err
 	}
 
@@ -241,7 +244,7 @@ func WrapWithKind(kind string, err error, message string) CtxErrorTraceI {
 	}
 
 	if _, ok := err.(CtxError); !ok {
-		ctxError.ErrorS = err.Error()
+		ctxError.ErrorS = safeErrorString(err, "")
 		ctxError.ErrorI = err
 	}
 
@@ -277,6 +280,29 @@ func getContextualizedError(message string, context map[string]interface{}) CtxE
 
 func (contextualizedError CtxError) GetMessage() string {
 	return contextualizedError.Message
+}
+
+func safeErrorString(err error, fallback string) (message string) {
+	message = fallback
+	if err == nil {
+		return message
+	}
+
+	value := reflect.ValueOf(err)
+	switch value.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		if value.IsNil() {
+			return message
+		}
+	}
+
+	defer func() {
+		if recover() != nil {
+			message = fallback
+		}
+	}()
+
+	return err.Error()
 }
 
 func sanitizeContext(m map[string]interface{}) (o map[string]interface{}) {
