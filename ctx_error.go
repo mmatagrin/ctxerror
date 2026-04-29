@@ -142,13 +142,17 @@ func (ctxError CtxError) Error() string {
 }
 
 func (ctxError CtxError) MarshalJSON() ([]byte, error) {
+	err := ""
+	if ctxError.ErrorI != nil {
+		err = ctxError.ErrorI.Error()
+	}
 	return json.Marshal(map[string]any{
 		"message":       ctxError.Message,
 		"file_name":     ctxError.FileName,
 		"line":          ctxError.Line,
 		"function_name": ctxError.FunctionName,
 		"context":       ctxError.Context,
-		"error":         ctxError.ErrorI.Error(),
+		"error":         err,
 	})
 }
 
